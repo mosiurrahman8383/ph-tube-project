@@ -1,3 +1,20 @@
+//get hour , minute and second
+function setTime(second){
+    const hour = parseInt(second / 3600);
+    const minute= parseInt(((second % 3600) / 60));
+    const seconds = second % 60;
+    return `${hour} hours, ${minute} minutes, ${seconds} seconds ago`
+}
+
+const removeActiveClass = ()=>{
+    const button = document.getElementsByClassName("category-btn");
+    console.log(button);
+    for(const btn of button){
+        btn.classList.remove("active")
+    }
+};
+
+
 //1. fetch , load and categoried on html
 
 //creat loadCategories
@@ -15,6 +32,49 @@ const loadVideos = () => {
         .catch(error => console.log(error))
 }
 
+
+const loadCategoryVideos = (id) =>{
+    // alert(id);
+    fetch(`https://openapi.programming-hero.com/api/phero-tube/category/${id}`)
+    .then(res => res.json())
+    .then(data => {
+        //remove active class
+        removeActiveClass()
+        //add active class
+        const activeBtn = document.getElementById(`btn-${id}`);
+        // console.log(activeBtn)
+        activeBtn.classList.add("active");
+        displayVideos(data.category);
+    })
+    
+    .catch(error => console.log(error))
+};
+
+const loadDetails =async (videoId) =>{
+    // console.log(videoId);
+    const uri= `https://openapi.programming-hero.com/api/phero-tube/video/${videoId}`;
+    const res = await fetch(uri);
+    const data = await res.json();
+    displayDetails(data.video)
+};
+
+const displayDetails = (video)=>{
+    console.log(video);
+    const detailsContainer = document.getElementById('modalContent');
+    detailsContainer.innerHTML= 
+    `
+    <img class="" src="${video.thumbnail}" alt="">
+    <p>${video.description}</p>
+    
+    `
+
+    // way: 01
+    // document.getElementById('showModalData').click();
+
+    // way: 02
+
+    document.getElementById('coustomeModal').showModal();
+}
 // {
 //     "category_id": "1001",
 //     "video_id": "aaab",
@@ -35,8 +95,25 @@ const loadVideos = () => {
 // }
 
 const displayVideos = (videos) => {
-    const containerVideos = document.getElementById('videos')
+    const containerVideos = document.getElementById('videos');
+    containerVideos.innerHTML= "";
     // console.log(videos);
+
+    if(videos.length === 0){
+        containerVideos.classList.remove("grid")
+        containerVideos.innerHTML = `
+        <div class=" flex flex-col justify-center items-center gap-4">
+        <img src="assets/Icon.png" >
+         <h2 class="text-2xl font-bold ">NO Content Here in this Category</h2>
+        </div>
+        
+        
+        `
+        
+    }
+    else{
+        containerVideos.classList.add("grid");
+    }
 
     videos.forEach((item) => {
         console.log(item)
@@ -48,7 +125,9 @@ const displayVideos = (videos) => {
              <img class="rounded-2xl h-full w-full object-cover"
                 src="${item.thumbnail}"
                  alt="thumbnail" />
-                <span class="absolute bg-black text-white right-2 bottom-2">${item.others.posted_date}</span>
+
+                 ${item.others.posted_date?.length === 0? "" :`<span class="absolute bg-black text-white text-xs right-2 bottom-2">${setTime(item.others.posted_date)}</span>` }
+                
         </figure>
             <div class="py-3 flex gap-4 ">
                 <div >
@@ -63,7 +142,15 @@ const displayVideos = (videos) => {
                        
                     </div>
                     <p>${item.others.views} views</p>
+
+                    
+            <p>
+            <button onclick="loadDetails('${item.video_id}')" class="btn btn-sm btn-error">
+            Details
+            </button>
+            </p>
             </div>  
+            
         </div>
         `
         containerVideos.append(card)
@@ -80,20 +167,25 @@ const displayVideos = (videos) => {
 //     "category": "Music"
 // }
 
-const displayCategories = (categories) => {
+const  displayCategories = (categories) => {
     const categoriesContainer = document.getElementById('categories');
 
     categories.forEach((item) => {
 
         // console.log(item);
         //creat buttons
+        
 
-        const button = document.createElement('button');
-        button.classList = "btn";
-        button.innerText = item.category;
+        const buttonContainer = document.createElement("div");
+        buttonContainer.innerHTML =
+        `
+        <button id="btn-${item.category_id}" onclick="loadCategoryVideos(${item.category_id})" class="btn category-btn">
+         ${item.category}
+         </button>
+        `;
 
         //append in container
-        categoriesContainer.append(button)
+        categoriesContainer.append(buttonContainer)
 
 
     });
